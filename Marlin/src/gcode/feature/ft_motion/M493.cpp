@@ -132,8 +132,12 @@ void GcodeSuite::M493_report(const bool forReplay/*=true*/) {
   SERIAL_ECHOPGM("  M493 S", c.active);
   #if HAS_X_AXIS
     SERIAL_ECHOPGM(" A", c.baseFreq.x);
+    SERIAL_ECHOPGM(" I", c.zeta.x);
+    SERIAL_ECHOPGM(" Q", c.vtol.x);
     #if HAS_Y_AXIS
       SERIAL_ECHOPGM(" B", c.baseFreq.y);
+      SERIAL_ECHOPGM(" J", c.zeta.y);
+      SERIAL_ECHOPGM(" R", c.vtol.y);
     #endif
   #endif
   #if HAS_DYNAMIC_FREQ
