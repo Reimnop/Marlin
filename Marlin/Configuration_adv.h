@@ -1219,7 +1219,7 @@
 
     // Use this to adjust the time required to consume the command buffer.
     // Try increasing this value if stepper motion is choppy.
-    #define FTM_STEPPERCMD_BUFF_SIZE 8000       // Size of the stepper command buffers
+    #define FTM_STEPPERCMD_BUFF_SIZE 5000       // Size of the stepper command buffers
 
   #else
     // CoreXY motion needs a larger buffer size. These values are based on our testing.
