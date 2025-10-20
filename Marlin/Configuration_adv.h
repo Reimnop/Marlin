@@ -1180,7 +1180,7 @@
   #define FTM_SHAPING_ZETA_E            0.03f   // Zeta used by input shapers for E axis
   #define FTM_SHAPING_V_TOL_E           0.05f   // Vibration tolerance used by EI input shapers for E axis
 
-  //#define FTM_SMOOTHING                       // Smoothing can reduce artifacts and make steppers quieter
+  #define FTM_SMOOTHING                       // Smoothing can reduce artifacts and make steppers quieter
                                                 // on sharp corners, but too much will round corners.
   #if ENABLED(FTM_SMOOTHING)
     #define FTM_MAX_SMOOTHING_TIME      0.10f   // (s) Maximum smoothing time. Higher values consume more RAM.
@@ -1212,14 +1212,14 @@
     #define FTM_BATCH_SIZE            100       // Custom Batch size for trajectory generation needed by Ulendo FBS
   #endif
 
-  #define FTM_FS                     1000       // (Hz) Frequency for trajectory generation
+  #define FTM_FS                     2500       // (Hz) Frequency for trajectory generation
 
   #if DISABLED(COREXY)
-    #define FTM_STEPPER_FS          20000       // (Hz) Frequency for stepper I/O update
+    #define FTM_STEPPER_FS          30000       // (Hz) Frequency for stepper I/O update
 
     // Use this to adjust the time required to consume the command buffer.
     // Try increasing this value if stepper motion is choppy.
-    #define FTM_STEPPERCMD_BUFF_SIZE 3000       // Size of the stepper command buffers
+    #define FTM_STEPPERCMD_BUFF_SIZE 8000       // Size of the stepper command buffers
 
   #else
     // CoreXY motion needs a larger buffer size. These values are based on our testing.
