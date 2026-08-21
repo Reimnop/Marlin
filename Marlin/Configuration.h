@@ -753,7 +753,7 @@
   #define MPC_HEATER_POWER { 60.0f }                  // (W) Nominal heat cartridge powers.
   #define MPC_PTC                                     // Hotend power changes with temperature (e.g., PTC heat cartridges).
   #if ENABLED(MPC_PTC)
-    #define MPC_HEATER_ALPHA { 0.0028f }              // Temperature coefficient of resistance of the heat cartridges.
+    #define MPC_HEATER_ALPHA { 0.00556 }              // Temperature coefficient of resistance of the heat cartridges.
     #define MPC_HEATER_REFTEMP { 20 }                 // (°C) Reference temperature for MPC_HEATER_POWER and MPC_HEATER_ALPHA.
   #endif
 
