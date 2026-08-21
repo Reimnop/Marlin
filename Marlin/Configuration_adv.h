@@ -1730,7 +1730,7 @@
   #endif
 
   #if HAS_WIRED_LCD
-    //#define DOUBLE_LCD_FRAMERATE        // Not recommended for slow boards.
+    #define DOUBLE_LCD_FRAMERATE        // Not recommended for slow boards.
   #endif
 
   // The timeout to return to the status screen from sub-menus
