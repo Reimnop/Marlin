@@ -2376,10 +2376,10 @@
 #define LCD_BED_TRAMMING
 
 #if ENABLED(LCD_BED_TRAMMING)
-  #define BED_TRAMMING_INSET_LFRB { 30, 30, 45, 30 } // (mm) Left, Front, Right, Back insets
-  #define BED_TRAMMING_HEIGHT      0.0        // (mm) Z height of nozzle at tramming points
-  #define BED_TRAMMING_Z_HOP       4.0        // (mm) Z raise between tramming points
-  //#define BED_TRAMMING_INCLUDE_CENTER       // Move to the center after the last corner
+  #define BED_TRAMMING_INSET_LFRB { 32.5, 32.5, 32.5, 32.5 } // (mm) Left, Front, Right, Back insets
+  #define BED_TRAMMING_HEIGHT      0.0                       // (mm) Z height of nozzle at tramming points
+  #define BED_TRAMMING_Z_HOP       4.0                       // (mm) Z raise between tramming points
+  //#define BED_TRAMMING_INCLUDE_CENTER                      // Move to the center after the last corner
   #define BED_TRAMMING_USE_PROBE
   #if ENABLED(BED_TRAMMING_USE_PROBE)
     #define BED_TRAMMING_PROBE_TOLERANCE 0.1  // (mm)
