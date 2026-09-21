@@ -1263,9 +1263,9 @@
   /**
    * Advanced configuration
    */
-  #define FTM_BUFFER_SIZE             256   // Window size for trajectory generation, must be a power of 2 (e.g 64, 128, 256, ...)
+  #define FTM_BUFFER_SIZE            1024   // Window size for trajectory generation, must be a power of 2 (e.g 64, 128, 256, ...)
                                             // The total buffered time in seconds is (FTM_BUFFER_SIZE/FTM_FS)
-  #define FTM_FS                     2000   // (Hz) Frequency for trajectory generation.
+  #define FTM_FS                    10000   // (Hz) Frequency for trajectory generation.
   #define FTM_MIN_SHAPE_FREQ           20   // (Hz) Minimum shaping frequency, lower consumes more RAM
 
   /**
@@ -2788,7 +2788,7 @@
 #if ALL(HAS_MEDIA, DIRECT_STEPPING)
   #define BLOCK_BUFFER_SIZE  8
 #elif HAS_MEDIA
-  #define BLOCK_BUFFER_SIZE 32
+  #define BLOCK_BUFFER_SIZE 64
 #else
   #define BLOCK_BUFFER_SIZE 16
 #endif
@@ -2796,8 +2796,8 @@
 // @section serial
 
 // The ASCII buffer for serial input
-#define MAX_CMD_SIZE 96
-#define BUFSIZE 4
+#define MAX_CMD_SIZE 128
+#define BUFSIZE 16
 
 /**
  * Host Transmit Buffer Size
