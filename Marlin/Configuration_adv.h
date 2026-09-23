@@ -586,18 +586,18 @@
  * Allows remapping which physical fan pin is used for part cooling.
  * By default: FAN0 -> FAN0_PIN, FAN1 -> FAN1_PIN, etc.
  */
-//#define PART_COOLING_FAN0_PIN   FAN0_PIN
-//#define PART_COOLING_FAN1_PIN   FAN1_PIN
-//#define PART_COOLING_FAN2_PIN   FAN2_PIN
-//#define PART_COOLING_FAN3_PIN   FAN3_PIN
-//#define PART_COOLING_FAN4_PIN   FAN4_PIN
-//#define PART_COOLING_FAN5_PIN   FAN5_PIN
-//#define PART_COOLING_FAN6_PIN   FAN6_PIN
-//#define PART_COOLING_FAN7_PIN   FAN7_PIN
-//#define PART_COOLING_FAN8_PIN   FAN8_PIN
-//#define PART_COOLING_FAN9_PIN   FAN9_PIN
-//#define PART_COOLING_FAN10_PIN  FAN10_PIN
-//#define PART_COOLING_FAN11_PIN  FAN11_PIN
+#define PART_COOLING_FAN0_PIN   FAN0_PIN
+#define PART_COOLING_FAN1_PIN   -1
+#define PART_COOLING_FAN2_PIN   -1
+#define PART_COOLING_FAN3_PIN   -1
+#define PART_COOLING_FAN4_PIN   -1
+#define PART_COOLING_FAN5_PIN   -1
+#define PART_COOLING_FAN6_PIN   -1
+#define PART_COOLING_FAN7_PIN   -1
+#define PART_COOLING_FAN8_PIN   -1
+#define PART_COOLING_FAN9_PIN   -1
+#define PART_COOLING_FAN10_PIN  -1
+#define PART_COOLING_FAN11_PIN  -1
 
 /**
  * Controller Fan
@@ -687,7 +687,7 @@
  */
 #define FAST_PWM_FAN    // Increase the fan PWM frequency. Removes the PWM noise but increases heating in the FET/Arduino
 #if ENABLED(FAST_PWM_FAN)
-  //#define FAST_PWM_FAN_FREQUENCY 31400  // Define here to override the defaults below
+  #define FAST_PWM_FAN_FREQUENCY 31400  // Define here to override the defaults below
   //#define USE_OCR2A_AS_TOP
   #ifndef FAST_PWM_FAN_FREQUENCY
     #ifdef __AVR__
@@ -718,7 +718,7 @@
  * Multiple extruders can be assigned to the same pin in which case
  * the fan will turn on when any selected extruder is above the threshold.
  */
-#define E0_AUTO_FAN_PIN FAN1_PIN
+#define E0_AUTO_FAN_PIN FAN0_PIN
 #define E1_AUTO_FAN_PIN -1
 #define E2_AUTO_FAN_PIN -1
 #define E3_AUTO_FAN_PIN -1
@@ -727,7 +727,7 @@
 #define E6_AUTO_FAN_PIN -1
 #define E7_AUTO_FAN_PIN -1
 #define CHAMBER_AUTO_FAN_PIN -1
-#define COOLER_AUTO_FAN_PIN FAN0_PIN
+#define COOLER_AUTO_FAN_PIN -1
 
 #define EXTRUDER_AUTO_FAN_TEMPERATURE 50
 #define EXTRUDER_AUTO_FAN_SPEED 255   // 255 == full speed
