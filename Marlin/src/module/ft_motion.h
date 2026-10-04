@@ -47,6 +47,11 @@
 
 #define FTM_VERSION   2   // Change version when hosts need to know
 
+// CoreXY: run trajectory, smoothing and shaping in head X/Y; convert to motor A/B at the end
+#if CORE_IS_XY && ENABLED(FTM_CORE_CARTESIAN_SHAPING)
+  #define HAS_FTM_CORE_CARTESIAN 1
+#endif
+
 #if ENABLED(FTM_DYNAMIC_FREQ)
   #define HAS_DYNAMIC_FREQ 1
   #if HAS_Z_AXIS
@@ -336,7 +341,7 @@ class FTMotion {
     #if HAS_FTM_DIR_CHANGE_HOLD
       static xyze_float_t ftm_hold_frames(xyze_float_t hold_coords);
       #if ENABLED(RESONANCE_TEST)
-        xyze_float_t get_last_target_traj() { return last_target_traj; } ;
+        xyze_float_t get_last_target_traj() { return last_target_traj; }
       #endif
     #endif
 
@@ -410,6 +415,12 @@ class FTMotion {
       // it may cause discontinuities.
       // Therefore, set the next starting position to the exact reached position.
       endPos_prevBlock = last_target_traj;
+      #if HAS_FTM_CORE_CARTESIAN
+        // last_target_traj is in motor A/B; the trajectory, shaper and smoother state are in head X/Y.
+        // Invert A = X+Y, B = CORESIGN(X-Y).
+        endPos_prevBlock.x = (last_target_traj.x + CORESIGN(last_target_traj.y)) * 0.5f;
+        endPos_prevBlock.y = (last_target_traj.x - CORESIGN(last_target_traj.y)) * 0.5f;
+      #endif
       // We now know that we are not moving and there are no pending echoes,
       // so set all shaping buffers to current position in case the new smoothing/shaping
       // parameters force input shaping to look in a past position for echoes.

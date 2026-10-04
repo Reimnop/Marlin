@@ -1190,6 +1190,14 @@
     #define FTM_DEFAULT_DYNFREQ_MODE dynFreqMode_DISABLED // Default mode of dynamic frequency calculation. (DISABLED, Z_BASED, MASS_BASED)
   #endif
 
+  /**
+   * CoreXY / CoreYX only. By default FT Motion works on the motor channels (X = motor A, Y = motor B),
+   * so the X and Y shapers act on the motors. Enable this to build the trajectory, smoothing and shaping
+   * in head (Cartesian) X/Y and convert to motor A/B only just before stepping. Then M493/M494 X and Y
+   * mean the real X and Y axes, and X/Y can use different shapers without cross-coupling.
+   */
+  #define FTM_CORE_CARTESIAN_SHAPING
+
   // Disable unused shapers if you need more free space
   #define FTM_SHAPER_ZV
   #define FTM_SHAPER_ZVD

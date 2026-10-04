@@ -425,11 +425,22 @@ bool FTMotion::plan_next_block() {
 
     startPos = endPos_prevBlock;
     const ext_distance_t &moveDist = current_block->ext_distance_mm;
-    ratio = moveDist / totalLength;
+
+    #if HAS_FTM_CORE_CARTESIAN
+      // moveDist.x/.y are motor A/B distances. Run the trajectory in head X/Y instead;
+      // calc_traj_point() converts back to A/B after smoothing and shaping.
+      xyze_float_t headDist = moveDist;
+      headDist.x = moveDist.real.x;
+      headDist.y = moveDist.real.y;
+      ratio = headDist / totalLength;
+    #else
+      ratio = moveDist / totalLength;
+    #endif
 
     currentGenerator->plan(current_block->entry_speed, current_block->exit_speed,
                            current_block->acceleration, current_block->nominal_speed, totalLength);
-    endPos_prevBlock += moveDist;
+
+    endPos_prevBlock += TERN(HAS_FTM_CORE_CARTESIAN, headDist, moveDist);
 
     TERN_(FTM_HAS_LIN_ADVANCE, use_advance_lead = current_block->use_advance_lead);
 
@@ -624,6 +635,17 @@ xyze_float_t FTMotion::calc_traj_point(const float dist) {
     if (++shaping.zi_idx == ftm_zmax) shaping.zi_idx = 0;
 
   #endif // HAS_FTM_SHAPING
+
+  #if HAS_FTM_CORE_CARTESIAN
+    // Head X/Y (smoothed and shaped) -> motor A/B, the same mapping the planner uses.
+    // Everything after this (fast-forward compare, direction-change hold, last_target_traj,
+    // stepping_enqueue) works on motor coordinates exactly as before.
+    {
+      const float hx = traj_coords.x, hy = traj_coords.y;
+      traj_coords.x = hx + hy;
+      traj_coords.y = CORESIGN(hx - hy);
+    }
+  #endif
 
   return traj_coords;
 }
