@@ -35,6 +35,12 @@
 resonance_test_params_t ResonanceGenerator::rt_params;     // Resonance test parameters
 float ResonanceGenerator::timeline;
 float ResonanceGenerator::sample_time;
+float ResonanceGenerator::sweep_center;
+bool ResonanceGenerator::center_valid = false;
+#if ENABLED(FT_MOTION)
+  uint32_t ResonanceGenerator::ftm_frame = 0;
+  uint32_t ResonanceGenerator::ftm_phase = 0;
+#endif
 
 bool ResonanceGenerator::active = false;                   // Resonance test active
 bool ResonanceGenerator::done = false;                     // Resonance test done
@@ -60,6 +66,8 @@ void ResonanceGenerator::start() {
   rt_params.start_pos = motion.position;
   active = true;
   done = false;
+  center_valid = false;
+  TERN_(FT_MOTION, ftm_frame = ftm_phase = 0);
 
   // Clamp Z-axis acceleration for safety
   if (rt_params.axis == Z_AXIS)
@@ -110,6 +118,10 @@ float ResonanceGenerator::calc_next_pos() {
   if (phase_fp >= M_TAU_FP) phase_fp -= M_TAU_FP;
   else if (phase_fp < 0) phase_fp += M_TAU_FP;
 
+  return calc_pos(phase_fp, FP2F(current_freq_fp));
+}
+
+float ResonanceGenerator::calc_pos(const int32_t phase_fp, const float freq_hz) {
   // -π <= r_fp <= π
   const int32_t r_fp = (phase_fp > M_PI_FP) ? phase_fp - M_TAU_FP : phase_fp;
 
@@ -124,36 +136,65 @@ float ResonanceGenerator::calc_next_pos() {
   const int32_t rp_fp = ((r_fp >> 1) * (poly_fp >> 1)) >> 14;
 
   // Amplitude ∝ 1/f done in float: one div, one mul, no int64
-  return (FP2F(amplitude_precalc_fp) / FP2F(current_freq_fp)) * FP2F(rp_fp);
+  return (FP2F(amplitude_precalc_fp) / freq_hz) * FP2F(rp_fp);
 }
 
 #if ENABLED(FT_MOTION)
 
   void ResonanceGenerator::fill_stepper_plan_buffer() {
-    #if HAS_FTM_DIR_CHANGE_HOLD
-      xyze_float_t traj_coords = ftMotion.get_last_target_traj();
-      traj_coords[rt_params.axis] = rt_params.start_pos[rt_params.axis];
-    #else
-      xyze_float_t traj_coords = rt_params.start_pos;
+    // FT Motion trajectory coordinates are relative to its last reset(), not absolute machine
+    // positions (rt_params.start_pos), so sweep around the last queued point. Using start_pos
+    // here would command a jump of the whole machine position in a single frame.
+    xyze_float_t traj_coords = ftMotion.get_last_target_traj();
+
+    #if HAS_FTM_CORE_CARTESIAN
+      // On CoreXY last_target_traj is in motor A/B. Sweep in head X/Y: invert A = X+Y, B = CORESIGN(X-Y).
+      {
+        const float a = traj_coords.x, b = traj_coords.y;
+        traj_coords.x = (a + CORESIGN(b)) * 0.5f;
+        traj_coords.y = (a - CORESIGN(b)) * 0.5f;
+      }
     #endif
-    // Save starting position, avoid cumulative errors
-    const float start_pos = rt_params.start_pos[rt_params.axis];
+
+    // Sweep center, kept from the first frame to avoid cumulative errors
+    if (!center_valid) {
+      sweep_center = traj_coords[rt_params.axis];
+      center_valid = true;
+    }
+
+    // One frame is FTM_TS long. The frequency doubles every octave_duration seconds
+    // of real time, so derive it from the frame count (no accumulated error).
+    const float octaves_per_frame = (FTM_TS) / rt_params.octave_duration;
 
     while (!ftMotion.stepping.is_full()) {
       // Calculate current frequency with exponential sweep
-      current_freq_fp += current_freq_fp >> FP_BITS;
-      if (current_freq_fp > max_freq_fp) {
+      const float freq = rt_params.min_freq * exp2f(float(ftm_frame) * octaves_per_frame);
+      if (freq > rt_params.max_freq) {
         done = true;
         return;
       }
+      ++ftm_frame;
+
+      // Integrate frequency into phase, in whole cycles of 2^32 so it wraps for free
+      ftm_phase += uint32_t(freq * ((FTM_TS) * 4294967296.0f));
+
+      // Cycles (2^32) -> radians (Q16, 0..2π)
+      const int32_t phase_fp = int32_t((uint64_t(ftm_phase) * M_TAU_FP) >> 32);
 
       // Resonate the axis being tested
-      traj_coords[rt_params.axis] = start_pos + calc_next_pos();
+      traj_coords[rt_params.axis] = sweep_center + calc_pos(phase_fp, freq);
 
-      TERN_(HAS_FTM_DIR_CHANGE_HOLD, traj_coords = ftMotion.ftm_hold_frames(traj_coords));
+      // Head X/Y -> motor A/B (as FTMotion::calc_traj_point does); the hold and stepping plan work on motor coordinates
+      xyze_float_t motor_coords = traj_coords;
+      #if HAS_FTM_CORE_CARTESIAN
+        motor_coords.x = traj_coords.x + traj_coords.y;
+        motor_coords.y = CORESIGN(traj_coords.x - traj_coords.y);
+      #endif
+
+      TERN_(HAS_FTM_DIR_CHANGE_HOLD, motor_coords = ftMotion.ftm_hold_frames(motor_coords));
 
       // Store in buffer
-      ftMotion.stepping_enqueue(traj_coords);
+      ftMotion.stepping_enqueue(motor_coords);
     }
   }
 

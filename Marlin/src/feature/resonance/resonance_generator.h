@@ -91,6 +91,7 @@ class ResonanceGenerator {
 
   private:
     static float calc_next_pos();     // Calculate next position point based on current frequency
+    static float calc_pos(const int32_t phase_fp, const float freq_hz); // Position offset (mm) for a phase (Q16 radians, 0..2π) and frequency
 
     // Fixed-point variables
     static int32_t amplitude_precalc_fp;  // Fixed-point amplitude precalculation
@@ -108,6 +109,15 @@ class ResonanceGenerator {
     static bool done;                 // Resonance test done
 
     static float sample_time;
+    static float sweep_center;        // FT Motion trajectory coordinate the sweep oscillates around
+    static bool center_valid;
+
+    #if ENABLED(FT_MOTION)
+      // FT Motion produces one sample per FTM_TS, not one per rt_time as the Standard Motion
+      // block generator does, so its sweep is advanced by real time per frame.
+      static uint32_t ftm_frame;      // Frames generated since the start of the test
+      static uint32_t ftm_phase;      // Phase accumulator (2^32 = one cycle, unsigned wrap-around is modulo one cycle)
+    #endif
 };
 
 extern ResonanceGenerator rtg;
