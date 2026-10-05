@@ -1192,11 +1192,17 @@
 
   /**
    * CoreXY / CoreYX only. By default FT Motion works on the motor channels (X = motor A, Y = motor B),
-   * so the X and Y shapers act on the motors. Enable this to build the trajectory, smoothing and shaping
-   * in head (Cartesian) X/Y and convert to motor A/B only just before stepping. Then M493/M494 X and Y
-   * mean the real X and Y axes, and X/Y can use different shapers without cross-coupling.
+   * and the planner applies its per-axis limits and junction speeds to those motors. Enable this to work
+   * in head (Cartesian) X/Y instead, converting to motor A/B only just before stepping:
+   *  - The trajectory, smoothing and shaping are built in head X/Y. Then M493/M494 X and Y mean the real
+   *    X and Y axes, and X/Y can use different shapers without cross-coupling.
+   *  - The planner applies the per-axis max feedrate (M203) and max acceleration (M201) to the real X and Y
+   *    axes of the toolhead, and computes junction speeds from the true toolpath geometry.
+   * WARNING: Since A = X + Y, a diagonal move then runs each motor up to twice as fast, and accelerates it up
+   * to twice as hard, as the X and Y limits. Choose the limits with your motors, drivers, and belts in mind.
+   * Axis-aligned moves are unaffected.
    */
-  #define FTM_CORE_CARTESIAN_SHAPING
+  #define FTM_CORE_CARTESIAN
 
   // Disable unused shapers if you need more free space
   #define FTM_SHAPER_ZV

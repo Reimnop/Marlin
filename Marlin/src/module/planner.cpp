@@ -2000,6 +2000,19 @@ bool Planner::_populate_block(
 
   TERN_(FT_MOTION, block->ext_distance_mm = dist_mm); // Store the distance for all axes in mm for this block
 
+  /**
+   * Distances for the per-axis speed and junction limits. On Core/H-bot these are normally the
+   * A/B motor distances. With FTM_CORE_CARTESIAN on CoreXY the X and Y limits apply to the
+   * toolhead instead, so use the real X and Y displacement.
+   */
+  #if HAS_FTM_CORE_CARTESIAN
+    xyze_float_t lim_mm = dist_mm;
+    lim_mm.x = dist_mm.real.x;
+    lim_mm.y = dist_mm.real.y;
+  #else
+    const ext_distance_t &lim_mm = dist_mm;
+  #endif
+
   #if HAS_ROTATIONAL_AXES
     bool cartesian_move = hints.cartesian_move;
   #endif
@@ -2231,7 +2244,7 @@ bool Planner::_populate_block(
 
   // Linear axes first with less logic
   LOOP_NUM_AXES(i) {
-    current_speed[i] = dist_mm[i] * inverse_secs;
+    current_speed[i] = lim_mm[i] * inverse_secs;
     const feedRate_t cs = ABS(current_speed[i]),
                  max_fr = settings.max_feedrate_mm_s[i];
     if (cs > max_fr) NOMORE(speed_factor, max_fr / cs);
@@ -2324,16 +2337,28 @@ bool Planner::_populate_block(
     accel = CEIL(settings.retract_acceleration * steps_per_mm);   // Convert to: acceleration steps/sec^2
   }
   else {
+    /**
+     * Steps along each axis for the acceleration limits. With FTM_CORE_CARTESIAN on CoreXY the
+     * X and Y limits apply to the toolhead, so use its steps rather than those of the A/B motors.
+     */
+    #if HAS_FTM_CORE_CARTESIAN
+      abce_ulong_t lim_steps = block->steps;
+      lim_steps.x = ABS(steps_dist.x);
+      lim_steps.y = ABS(steps_dist.y);
+    #else
+      const abce_ulong_t &lim_steps = block->steps;
+    #endif
+
     #define LIMIT_ACCEL_LONG(AXIS,INDX) do{ \
-      if (block->steps[AXIS] && max_acceleration_steps_per_s2[AXIS+INDX] < accel) { \
-        const uint32_t max_possible = max_acceleration_steps_per_s2[AXIS+INDX] * block->step_event_count / block->steps[AXIS]; \
+      if (lim_steps[AXIS] && max_acceleration_steps_per_s2[AXIS+INDX] < accel) { \
+        const uint32_t max_possible = max_acceleration_steps_per_s2[AXIS+INDX] * block->step_event_count / lim_steps[AXIS]; \
         NOMORE(accel, max_possible); \
       } \
     }while(0)
 
     #define LIMIT_ACCEL_FLOAT(AXIS,INDX) do{ \
-      if (block->steps[AXIS] && max_acceleration_steps_per_s2[AXIS+INDX] < accel) { \
-        const float max_possible = float(max_acceleration_steps_per_s2[AXIS+INDX]) * float(block->step_event_count) / float(block->steps[AXIS]); \
+      if (lim_steps[AXIS] && max_acceleration_steps_per_s2[AXIS+INDX] < accel) { \
+        const float max_possible = float(max_acceleration_steps_per_s2[AXIS+INDX]) * float(block->step_event_count) / float(lim_steps[AXIS]); \
         NOMORE(accel, max_possible); \
       } \
     }while(0)
@@ -2494,10 +2519,10 @@ bool Planner::_populate_block(
       #if HAS_DIST_MM_ARG
         cart_dist_mm
       #else
-        LOGICAL_AXIS_ARRAY(dist_mm.e,
-          dist_mm.x, dist_mm.y, dist_mm.z,
-          dist_mm.i, dist_mm.j, dist_mm.k,
-          dist_mm.u, dist_mm.v, dist_mm.w)
+        LOGICAL_AXIS_ARRAY(lim_mm.e,
+          lim_mm.x, lim_mm.y, lim_mm.z,
+          lim_mm.i, lim_mm.j, lim_mm.k,
+          lim_mm.u, lim_mm.v, lim_mm.w)
       #endif
     ;
 
@@ -2506,8 +2531,10 @@ bool Planner::_populate_block(
      * So taking Z and E into account, we cannot scale to a unit vector with "inverse_millimeters".
      * => normalize the complete junction vector.
      * Elsewise, when needed JD will factor-in the E component
+     *
+     * With FTM_CORE_CARTESIAN on CoreXY the vector holds the head X and Y, so it scales like any Cartesian vector.
      */
-    if (ANY(IS_CORE, MARKFORGED_XY, MARKFORGED_YX) || esteps > 0)
+    if ((ANY(IS_CORE, MARKFORGED_XY, MARKFORGED_YX) && DISABLED(HAS_FTM_CORE_CARTESIAN)) || esteps > 0)
       (void)normalize_junction_vector(unit_vec);  // Normalize with XYZE components
     else
       unit_vec *= inverse_millimeters;      // Use pre-calculated (1 / SQRT(x^2 + y^2 + z^2))

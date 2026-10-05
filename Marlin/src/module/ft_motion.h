@@ -47,8 +47,9 @@
 
 #define FTM_VERSION   2   // Change version when hosts need to know
 
-// CoreXY: run trajectory, smoothing and shaping in head X/Y; convert to motor A/B at the end
-#if CORE_IS_XY && ENABLED(FTM_CORE_CARTESIAN_SHAPING)
+// CoreXY: plan (per-axis limits, junction speeds), build the trajectory, smooth and shape in head X/Y;
+// convert to motor A/B only at the end
+#if CORE_IS_XY && ENABLED(FTM_CORE_CARTESIAN)
   #define HAS_FTM_CORE_CARTESIAN 1
 #endif
 
